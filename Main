@@ -1,0 +1,101 @@
+#include<fstream>
+using namespace std;
+
+class Average{
+	public:
+		int numRows, numCols, minVal, maxVal, newMin, newMax;
+		int** mirrorFramedArray;
+		int** tempArray;
+		int neighborArray[9];
+		Average();
+		void mirrorFramed(int**);
+		void loadImage(string,string);
+		void loadNeighbors(int**);
+};
+Average::Average(){
+	numRows=numCols=minVal=maxVal=0;
+}
+void Average::loadImage(string in, string out){
+	ifstream infile(in);
+	infile>>numRows;
+	infile>>numCols;
+	infile>>minVal;
+	infile>>maxVal;
+	mirrorFramedArray = new int*[numRows+2];
+	for (int i=0; i<numRows+2; i++){
+		mirrorFramedArray[i]=new int[numCols+2];
+	}
+	tempArray = new int*[numRows+2];
+	for (int i=0; i<numRows+2; i++){
+		tempArray[i]=new int[numCols+2];
+	}
+
+	int row=1;
+	int col=1;
+	int value;
+	while (infile >> value){
+		mirrorFramedArray[row][col]=value;
+		if (row==numRows+1) {
+			row=1;
+			col++;
+		}	
+		else row++;
+	}
+	infile.close();
+	mirrorFramed(mirrorFramedArray);
+	loadNeighbors(mirrorFramedArray);
+	ofstream outfile;
+	outfile.open(out);
+	outfile<<numRows<<" "<<numCols<<" "<<newMin<<" "<<newMax<<endl;
+	for (int i=1; i<numRows+1; i++){
+		for (int j=1; j<numCols+1; j++){
+			outfile<<tempArray[i][j]<<" ";
+		}
+		outfile<<endl;
+	}
+	outfile.close();
+	
+}
+void Average::mirrorFramed(int** frame){
+	for (int i=1; i<=numRows; i++){
+		frame[i][0]=frame[i][1];
+		frame[i][numCols+1]=frame[i][numCols];
+	}
+	for (int i=0; i<=numCols+1; i++){
+		frame[0][i]=frame[1][i];
+		frame[numRows+1][i]=frame[numRows][i];
+	}
+}
+void Average::loadNeighbors(int** frame){
+	for (int i=1; i<numRows+1; i++){
+		for (int j=1; j<numCols+1; j++){
+			int counter=0;
+			for (int x=i-1; x<=i+1; x++){
+				for (int y=j-1; y<=j+1; y++){
+					neighborArray[counter]=frame[x][y];
+					counter++;
+				}
+			}
+			int sum=0;
+			for (int x=0; x<9; x++){
+				sum+=neighborArray[x];
+			}
+			int result =sum/9;
+			tempArray[i][j]=result;
+		}
+	}
+	newMin=newMax=tempArray[1][1];
+	for (int i=1; i<numRows+1; i++){
+		for (int j=1; j<numCols+1; j++){
+			if (tempArray[i][j]>newMax) newMax=tempArray[i][j];
+			else if (tempArray[i][j]<newMin) newMin=tempArray[i][j];
+		}
+	}
+}
+
+int main(int argc, char* argv[]){
+	Average aver;
+	aver.loadImage(argv[1],argv[2]);
+	
+	return 0;
+}
